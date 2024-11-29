@@ -15,6 +15,7 @@ class Vgg16(nn.Module):
             nn.ReLU(),
             nn.Linear(4096, num_classes)
         )
+        print("Using Vgg16")
 
     def make_features(self):
         layers = []
@@ -31,11 +32,12 @@ class Vgg16(nn.Module):
         
     def forward(self, x):
         x = self.features(x) 
-        
+        x = torch.flatten(x, start_dim=1)
+        x = self.classifier(x)
         return x
         
 if __name__ == '__main__':
     cfg = [64,64,'M',128,128,'M',256,256,256,'M',512,512,512,'M',512,512,512,'M']
 
     model = Vgg16(cfg).to("cuda")
-    summary(model, (3,224,224))
+    summary(model, input_size=(3, 224, 224),device="cuda")  # Add this line for detailed summary

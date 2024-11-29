@@ -15,10 +15,18 @@ from torchvision import datasets
 from models.AlexNet import AlexNet  # Adjust this if the class/function name is different
 from torch.utils.data import random_split
 from torchsummary import summary
+from models.Vgg16 import Vgg16
+from models.MobileV2 import MobileNetV2
+from utils.util import create_model
+torch.backends.cudnn.deterministic = True  # Ensure deterministic behavior
 
 def main(args):
     # config
-
+    
+    seed = 42  # You can choose any integer as your seed
+    #random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     data_transforms = {
         "train": v2.Compose([
             v2.ToImage(),
@@ -60,8 +68,12 @@ def main(args):
     # train_dataset.transform = data_transforms['train'] transform doesnt work
     # val_dataset.transform = data_transforms['val']
     train_dataset = TransformDataset(train_dataset, transform=data_transforms['train'])
-    # train_dataset = Subset(train_dataset, list(range(100)))
     val_dataset = TransformDataset(val_dataset, transform=data_transforms['val'])
+    
+
+    #train_dataset = Subset(train_dataset, list(range(100)))
+    #val_dataset = Subset(val_dataset, list(range(100)))
+    
     # dataloade
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True)
@@ -73,20 +85,35 @@ def main(args):
     print(f"validation samples: {len(val_loader.dataset)}")
     print(f"testing samples: {len(test_loader.dataset)}")
     
-    model = AlexNet(num_classes=10).to(args.device)
+    if args.model == 'alex':
+        model = AlexNet(num_classes=10).to(args.device)
+    elif args.model == 'vgg':
+        cfg = [64,64,'M',128,128,'M',256,256,256,'M',512,512,512,'M',512,512,512,'M']
+        model = Vgg16(cfg,num_classes=10).to(args.device)
+    elif args.model == 'mobilenetv2':
+        model = MobileNetV2(num_classes=10).to(args.device)
+        
+    if args.pretrain:
+        pretrain_path = "E:\learn\pyproject\Pretrained\hub\checkpoints"
+        print(f"-----loading pretrained model-----")
+        model = create_model(args, model, pretrain_path)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    # train(args,model, train_loader, val_loader, criterion, optimizer)
+    train(args,model, train_loader, val_loader, criterion, optimizer)
+    
     # summary(model, (3,224,224))
-    test(args,model, test_loader)
+    # test(args,model, test_loader)tenso
     
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Start training")
     parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--model', type=str, default='alex')
+    parser.add_argument('--model', type=str, default='mobilenetv2')
+    parser.add_argument('--load_pth', type=str, default='mobilenet_v2-b0353104.pth')
+    parser.add_argument('--pretrain', type=bool, default=True)
     args = parser.parse_args()
     main(args)
+z

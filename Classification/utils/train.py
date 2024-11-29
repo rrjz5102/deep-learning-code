@@ -4,7 +4,7 @@ from torch import nn
 from tqdm import tqdm
 import os
 from torch.utils.tensorboard import SummaryWriter
-
+import torchvision
 
 def train(args,model, train_loader, val_loader, criterion, optimizer):
     os.makedirs('./runs/'+args.model, exist_ok=True)
@@ -38,8 +38,8 @@ def train(args,model, train_loader, val_loader, criterion, optimizer):
         train_loss = running_loss / len(train_loader.dataset)  # Divide by total number of samples
         train_acc = correct / len(train_loader.dataset)
         val_loss, val_acc = validate(args, model, val_loader, criterion)
-        writer.add_scalars('Loss', {'train': train_loss, 'validation': val_loss}, epoch)
-        writer.add_scalars('Accuracy', {'train': train_acc, 'validation': val_acc}, epoch)
+        writer.add_scalars(args.model+' Loss', {'train': train_loss, 'validation': val_loss}, epoch)
+        writer.add_scalars(args.model+' Accuracy', {'train': train_acc, 'validation': val_acc}, epoch)
         
         print(f"Epoch {epoch+1}/{args.epochs}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
         if val_acc > best_acc:
